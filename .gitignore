@@ -2,3 +2,9 @@
 /rwr_tweak.spec
 /rwr_tweak_icon_128.png
 /__pycache__
+
+# Ignore Python bytecode files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
