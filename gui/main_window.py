@@ -18,8 +18,9 @@ class MainWindow:
     def __init__(self, root, controller: "AppController"):
         self.root = root
         self.controller = controller
-        self.root.title("PNG Image Editor")
-        self.root.geometry("1024x768") # Increased default size
+        self.root.title("RWR Tweak")
+        # self.root.geometry("1024x768") # Increased default size
+        self.root.geometry("800x600") # Set a more manageable default size
 
         # --- Main Paned Window for resizable sections ---
         main_pane = ttk.PanedWindow(self.root, orient=tk.HORIZONTAL)
