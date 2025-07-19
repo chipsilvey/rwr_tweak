@@ -26,7 +26,7 @@ class ColorTool(BaseTool):
         # --- Create variables to hold slider values ---
         self.hue_var = tk.IntVar(value=0)
         self.sat_var = tk.DoubleVar(value=100.0)
-        self.val_var = tk.DoubleVar(value=100.0)
+        self.val_var = tk.DoubleVar(value=127.0)
         
         self.enabled_checkbox = ttk.Checkbutton(
             tool_frame,
@@ -71,20 +71,21 @@ class ColorTool(BaseTool):
         self.val_slider = ttk.Scale(
             tool_frame,
             from_=0,
-            to=200,
+            to=255,
             orient=tk.HORIZONTAL,
             variable=self.val_var,
             command=self._on_change
         )
         self.val_slider.pack(fill=tk.X, expand=True)
-        self.val_label = ttk.Label(tool_frame, text="100.0%")
+        self.val_label = ttk.Label(tool_frame, text="0")
         self.val_label.pack()
 
     def _on_change(self, _=None):
         # Update labels
         self.hue_label.config(text=f"{self.hue_var.get()}")
         self.sat_label.config(text=f"{self.sat_var.get():.1f}%")
-        self.val_label.config(text=f"{self.val_var.get():.1f}%")
+        self.val_var.set(round(self.val_var.get()))
+        self.val_label.config(text=f"{self.val_var.get():.0f}")
         # Notify controller of the change
         self.controller.apply_changes('color', self.get_settings())
 
@@ -102,7 +103,7 @@ class ColorTool(BaseTool):
         self.enabled_var.set(settings.get('enabled', False))
         self.hue_var.set(settings.get('hue', 0))
         self.sat_var.set(settings.get('saturation', 100.0))
-        self.val_var.set(settings.get('value', 100.0))
+        self.val_var.set(settings.get('value', 127.0))
         self._on_change()
 
     def apply(self, image_data: np.ndarray) -> np.ndarray:
@@ -122,24 +123,27 @@ class ColorTool(BaseTool):
 
         hue = settings.get('hue', 0)            # [-90, 90]
         saturation = settings.get('saturation', 100)  # [0, 200]
-        value_scale = settings.get('value', 100) / 100.0  # [0.0, 2.0]
+        value_scale = settings.get('value', 127)  # [0, 255]
 
         # Clamp and normalize
         hue = np.clip(hue, -180, 180)
         sat = np.clip(saturation, 0, 200) / 100.0
-        sat_fill_value = int(np.clip(sat * 255, 0, 255))
 
         # Separate alpha channel
         gray_bgr = image_data[:, :, :3]
         alpha = image_data[:, :, 3]
 
-        # Convert BGR to grayscale (this ensures you're working from the luminance)
-        gray = cv2.cvtColor(gray_bgr, cv2.COLOR_BGR2GRAY)
+        # Convert to grayscale
+        gray = cv2.cvtColor(gray_bgr, cv2.COLOR_BGR2GRAY).astype(np.float32)
 
-        # Construct synthetic HSV image
-        h_channel = np.full_like(gray, (hue % 180), dtype=np.uint8)          # H in [0,179]
-        s_channel = np.full_like(gray, sat_fill_value, dtype=np.uint8)       # S in [0,255]
-        v_channel = np.clip(gray * value_scale, 0, 255).astype(np.uint8)     # V from gray
+        # Normalize grayscale to [0, 1]
+        gray_norm = gray / 255.0
+
+        # Compute HSV with full value, apply hue and saturation
+        height, width = gray.shape
+        h_channel = np.full((height, width), hue % 180, dtype=np.uint8)
+        s_channel = np.full((height, width), int(np.clip(sat * 255, 0, 255)), dtype=np.uint8)
+        v_channel = np.full((height, width), value_scale, dtype=np.uint8)  # Always max brightness for color
 
         hsv = cv2.merge([h_channel, s_channel, v_channel])
 
