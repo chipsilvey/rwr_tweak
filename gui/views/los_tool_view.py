@@ -157,8 +157,6 @@ class LineOfSightToolView(AppView):
 
     def create_menu(self):
         """creates a menu for the Line of Sight tool."""
-        print(f"main_window: {self.main_window}, MainWindow: {self.main_window.__class__.__name__}")
-
         if self.parent and hasattr(self.main_window, "menubar") and self.main_window.menubar is not None:
                 self.los_menu = tk.Menu(self.main_window.menubar, tearoff=0)
                 self.main_window.menubar.add_cascade(label="Line of Sight", menu=self.los_menu)
