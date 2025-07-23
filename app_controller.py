@@ -6,7 +6,6 @@
 # app_controller.py
 # Handles application logic, state, and communication.
 
-from posixpath import isabs
 import shutil
 import os
 import cv2
@@ -18,13 +17,12 @@ import pkgutil
 import inspect
 
 from numpy import save
-import tools
-from tools.base_tool import BaseTool
 
 from image_processor import ImageProcessor
 from config_manager import ConfigManager
-# from tools.transparency_tool import TransparencyTool
-# from tools.color_tool import ColorTool
+
+# Import the new view classes
+from gui.views.los_tool_view import LineOfSightToolView
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -45,6 +43,7 @@ class AppController:
         self.processor = ImageProcessor() 
         self.config_manager = ConfigManager()
 
+        self.active_view = None
         self.settings = {}
         
         self.zoom_level = 1.0
@@ -53,8 +52,35 @@ class AppController:
 
     def set_view(self, view: "MainWindow"):
         self.view = view
-        if self.view: # Update status bar with current (likely None) paths # new
-            self.view.update_status_bar(self.image_path, self.config_path) # new
+        # if self.view: # Update status bar with current (likely None) paths # new
+        #     self.view.update_status_bar(self.image_path, self.config_path) # new
+
+    def register_views(self, main_window):
+        """Creates instances of all views and registers them with the MainWindow."""
+        # Instantiate the Line of Sight tool view
+        los_view = LineOfSightToolView(main_window.main_content_frame, self)
+        main_window.register_view("Line of Sight Tool", los_view)
+
+        # --- Add other top-level tools here in the future ---
+        # some_other_view = SomeOtherView(main_window.main_content_frame, self)
+        # main_window.register_view("Some Other Tool", some_other_view)
+
+        # Populate the "Tools" menu in the MainWindow
+        tools_menu = main_window.menubar.winfo_children()[1] # Assumes "Tools" is the 2nd menu
+        for view_name in main_window.views.keys():
+            tools_menu.add_command(
+                label=view_name,
+                command=lambda v=view_name: self.switch_view(v)
+            )
+        
+        # Add the image-specific commands to the tools menu as well
+        tools_menu.add_separator()
+        tools_menu.add_command(label="Open Image for LoS Tool...", command=self.open_image_dialog)
+
+    def switch_view(self, view_name):
+        """Tells the main window to display a specific view."""
+        if self.view:
+            self.view.switch_to_view(view_name)
 
     def _convert_cv_to_pil(self, cv_image):
         if cv_image is None: return None
@@ -80,12 +106,8 @@ class AppController:
             self.display_mode = 'fit'
             self.zoom_level = 1.0
             
-            self.update_gui()
-            # self._apply_all_tool_effects() # Process the image
-            # self.update_view()           # Display the result
-            # if self.view:
-            #     self.view.update_status_bar(self.image_path, self.config_path) # new
-            #     self.view.load_tool_settings(self.settings)
+            self.switch_view("Line of Sight Tool")
+            
 
         except (FileNotFoundError, ValueError) as e:
             messagebox.showerror("Error", str(e))
@@ -101,9 +123,6 @@ class AppController:
         """
         self._apply_all_tool_effects() # Process the image
         self.update_view()           # Display the result
-        if self.view:
-            self.view.update_status_bar(self.image_path, self.config_path) # new
-            self.view.load_tool_settings(self.settings)
 
     def _apply_all_tool_effects(self):
         """
@@ -124,12 +143,17 @@ class AppController:
         self.processed_image_cv = current_image
 
     def update_view(self):
-        """Updates the GUI with the currently processed image data."""
-        if self.view and self.processed_image_cv is not None:
-            pil_image = self._convert_cv_to_pil(self.processed_image_cv)
-            self.view.update_display(pil_image)
-        elif self.view:
-             self.view.update_display(None)
+        """Updates the active view with the currently processed image data."""
+        if self.view:
+            # Find the active view (the one that is not hidden)
+            active_view = self.view.views.get("Line of Sight Tool") # Assume LoS for now
+            if active_view and active_view.winfo_ismapped():
+                self.active_view = active_view
+                if self.processed_image_cv is not None:
+                    pil_image = self._convert_cv_to_pil(self.processed_image_cv)
+                    active_view.update_display(pil_image)
+                else:
+                    active_view.update_display(None)
 
     def apply_changes(self, tool_name, tool_settings):
         if not self.is_image_loaded(): return
@@ -259,39 +283,37 @@ class AppController:
         self.image_path = self.backup_path = self.config_path = None
         self.original_image_cv = self.processed_image_cv = None
         self.settings = {}
-        if self.view:
-            self.view.update_display(None)
-            self.view.update_status_bar(None, None) # new
-            self.view.load_tool_settings({})
+        if self.active_view:
+            self.active_view.update_display(None)
     
-    def load_tools(self, parent_frame):
-        """
-        Dynamically discovers and loads all tool plugins from the 'tools' directory.
-        """
-        self.available_tools = {}
-        # Discover modules in the 'tools' package
-        discovered_plugins = {
-            name: importlib.import_module(name)
-            for finder, name, ispkg
-            in pkgutil.iter_modules(tools.__path__, tools.__name__ + ".")
-        }
+    # def load_tools(self, parent_frame):
+    #     """
+    #     Dynamically discovers and loads all tool plugins from the 'tools' directory.
+    #     """
+    #     self.available_tools = {}
+    #     # Discover modules in the 'tools' package
+    #     discovered_plugins = {
+    #         name: importlib.import_module(name)
+    #         for finder, name, ispkg
+    #         in pkgutil.iter_modules(tools.__path__, tools.__name__ + ".")
+    #     }
 
-        for name, module in discovered_plugins.items():
-            # Find classes within the module
-            for i in inspect.getmembers(module, inspect.isclass):
-                class_obj = i[1]
-                # Check if it's a subclass of BaseTool and not BaseTool itself
-                if issubclass(class_obj, BaseTool) and class_obj is not BaseTool:
-                    # The key for the tool will be the module name minus "_tool"
-                    tool_key = module.__name__.split('.')[-1].replace("_tool", "")
-                    # Instantiate the tool
-                    tool_instance = class_obj()
-                    self.available_tools[tool_key] = tool_instance
-                    print(f"Dynamically loaded tool: '{tool_key}'")
+    #     for name, module in discovered_plugins.items():
+    #         # Find classes within the module
+    #         for i in inspect.getmembers(module, inspect.isclass):
+    #             class_obj = i[1]
+    #             # Check if it's a subclass of BaseTool and not BaseTool itself
+    #             if issubclass(class_obj, BaseTool) and class_obj is not BaseTool:
+    #                 # The key for the tool will be the module name minus "_tool"
+    #                 tool_key = module.__name__.split('.')[-1].replace("_tool", "")
+    #                 # Instantiate the tool
+    #                 tool_instance = class_obj()
+    #                 self.available_tools[tool_key] = tool_instance
+    #                 print(f"Dynamically loaded tool: '{tool_key}'")
         
-        # Now create the GUI for the discovered tools
-        # A more advanced version might sort tools by a 'priority' attribute
-        for tool_name, tool_instance in self.available_tools.items():
-            tool_instance.create_gui(parent_frame, self)
+    #     # Now create the GUI for the discovered tools
+    #     # A more advanced version might sort tools by a 'priority' attribute
+    #     for tool_name, tool_instance in self.available_tools.items():
+    #         tool_instance.create_gui(parent_frame, self)
         
-        return self.available_tools
+    #     return self.available_tools
