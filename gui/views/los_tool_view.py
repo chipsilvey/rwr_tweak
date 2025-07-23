@@ -23,10 +23,10 @@ class LineOfSightToolView(AppView):
     The main view for the image manipulation tool.
     This class now contains the canvas, tool panel, and specific menus.
     """
-    def __init__(self, parent: "MainWindow", controller: "AppController"):
+    def __init__(self, parent, main_window: "MainWindow", controller: "AppController"):
         super().__init__(parent, controller)
 
-        self.parent = parent
+        self.main_window = main_window
 
         # --- Main Layout ---
         main_pane = ttk.PanedWindow(self, orient=tk.HORIZONTAL)
@@ -100,18 +100,23 @@ class LineOfSightToolView(AppView):
         main_pane.add(self.tools_frame, weight=1)
         tk.Label(self.tools_frame, text="Image Tools", bg="lightgray", font=("Arial", 12, "bold"), relief=tk.GROOVE).pack(pady=10, fill=tk.X, padx=5)
 
-        self.create_menu()
+        # create menu only after activated
+        # self.create_menu()
 
         # --- Load Image Processing Tools ---
         self.tools = self.load_tools(self.tools_frame)
 
-    def was_activated(self):
+    def activated(self, value: bool):
         """Called by MainWindow when this view is shown."""
-        self._draw_checkered_background()
-        # If an image is already loaded in the controller, display it.
-        # This handles switching back to this view after opening an image.
-        
-        self.controller.update_view()
+        if value:
+            self._draw_checkered_background()
+            self.create_menu()
+            # If an image is already loaded in the controller, display it.
+            # This handles switching back to this view after opening an image.
+            self.controller.update_view()
+        else:
+            self.remove_menu()
+
 
     def _draw_checkered_background(self, event=None):
         """Draws a checkered background on the canvas."""
@@ -152,9 +157,11 @@ class LineOfSightToolView(AppView):
 
     def create_menu(self):
         """creates a menu for the Line of Sight tool."""
-        if self.parent and hasattr(self.parent, "menubar") and self.parent.menubar is not None:
-                self.los_menu = tk.Menu(self.parent.menubar, tearoff=0)
-                self.parent.menubar.add_cascade(label="Line of Sight", menu=self.los_menu)
+        print(f"main_window: {self.main_window}, MainWindow: {self.main_window.__class__.__name__}")
+
+        if self.parent and hasattr(self.main_window, "menubar") and self.main_window.menubar is not None:
+                self.los_menu = tk.Menu(self.main_window.menubar, tearoff=0)
+                self.main_window.menubar.add_cascade(label="Line of Sight", menu=self.los_menu)
 
                 self.los_menu.add_command(label="Open Image...", command=lambda: self.controller.open_image_dialog())
                 self.los_menu.add_command(label="Open RWR los.png", command=lambda: self.open_rwr_los(), state=tk.NORMAL if self.rwr_los_path else tk.DISABLED)
@@ -167,8 +174,8 @@ class LineOfSightToolView(AppView):
                 self.los_menu.add_command(label="Save Tool Settings...", command=lambda: self.controller.save_tool_settings(), state=tk.DISABLED)
                 self.los_menu.add_command(label="Save Tool Settings As...", command=lambda: self.controller.save_tool_settings_as_dialog(), state=tk.DISABLED)
       
-                self.view_menu = tk.Menu(self.parent.menubar, tearoff=0)
-                self.parent.menubar.add_cascade(label="View", menu=self.view_menu)
+                self.view_menu = tk.Menu(self.main_window.menubar, tearoff=0)
+                self.main_window.menubar.add_cascade(label="View", menu=self.view_menu)
 
                 self.view_menu.add_command(label="Zoom In (+)", command=lambda: self.controller.zoom_in(), state=tk.DISABLED)
                 self.view_menu.add_command(label="Zoom Out (-)", command=lambda: self.controller.zoom_out(), state=tk.DISABLED)
@@ -191,6 +198,18 @@ class LineOfSightToolView(AppView):
         self.view_menu.entryconfig("Zoom Out (-)", state=state)
         self.view_menu.entryconfig("Fit to Window", state=state)
         self.view_menu.entryconfig("Actual Size (100%)", state=state)
+
+    def remove_menu(self):
+        """Removes the LOS and View menus from the menubar."""
+        menubar = self.main_window.menubar
+        if menubar is not None:
+            for label in ["Line of Sight", "View"]:
+                try:
+                    index = menubar.index(label)
+                    if index is not None:
+                        menubar.delete(index)
+                except Exception:
+                    pass  # Menu might not exist
 
     def update_display(self, pil_image_to_display:Image.Image | None=None):
         """

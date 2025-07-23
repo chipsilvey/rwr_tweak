@@ -68,8 +68,8 @@ class MainWindow:
             if key == view_name:
                 view.grid() # Show the selected view
                 # If the view has a 'was_activated' method, call it.
-                if hasattr(view, 'was_activated'):
-                    view.was_activated()
+                if hasattr(view, 'activated'):
+                    view.activated(True)
             else:
                 view.grid_remove() # Hide all other views
         

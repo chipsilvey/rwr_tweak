@@ -58,7 +58,7 @@ class AppController:
     def register_views(self, main_window):
         """Creates instances of all views and registers them with the MainWindow."""
         # Instantiate the Line of Sight tool view
-        los_view = LineOfSightToolView(main_window.main_content_frame, self)
+        los_view = LineOfSightToolView(main_window.main_content_frame, main_window, self)
         main_window.register_view("Line of Sight Tool", los_view)
 
         # --- Add other top-level tools here in the future ---
