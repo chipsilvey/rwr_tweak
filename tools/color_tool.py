@@ -1,7 +1,5 @@
 # tools/color_tool.py
 
-from email.mime import image
-import re
 import tkinter as tk
 from tkinter import ttk
 import cv2
