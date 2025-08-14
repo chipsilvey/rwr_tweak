@@ -1,5 +1,21 @@
-# config_manager.py
-# Handles reading and writing of YAML configuration files.
+"""
+config_manager.py
+
+This module provides the ConfigManager class for handling the loading and saving of image editing tool settings
+in YAML format. It abstracts reading and writing configuration files that store the state and parameters of
+various image processing tools used in the application.
+
+Usage:
+- The AppController uses ConfigManager to persist and restore tool settings associated with each image.
+- Settings are stored as dictionaries and serialized to YAML files, typically named after the image file with a .yaml extension.
+- If a YAML file does not exist or is invalid, ConfigManager returns an empty dictionary to ensure robust operation.
+
+Dependencies:
+- PyYAML for YAML parsing and serialization.
+- Standard Python modules: os.
+
+Intended for use as a utility within the application's controller to manage user and tool configuration data.
+"""
 
 import yaml
 import os

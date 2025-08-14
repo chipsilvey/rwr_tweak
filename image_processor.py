@@ -1,9 +1,21 @@
-# Load a PNG file into an OpenCV Mat object using cv2.IMREAD_UNCHANGED to preserve the alpha channel.
-# Apply a series of manipulations based on the settings dictionary.
-# Save the modified image array back to a file.
+"""
+image_processor.py
 
-# image_processor.py
-# Contains all OpenCV logic for image manipulation.
+This module provides the ImageProcessor class, which encapsulates all OpenCV-based image loading, processing, and saving logic
+for the application. It ensures images are loaded with alpha channel support, applies manipulations as directed by the controller,
+and saves processed images to disk.
+
+Usage:
+- Used by AppController to load PNG images (preserving transparency), process them via tool chains, and save the results.
+- Handles conversion between file paths and OpenCV image arrays (NumPy ndarrays).
+- Ensures all images have a 4-channel (BGRA) format for consistent downstream processing.
+
+Dependencies:
+- OpenCV (cv2) for image I/O and manipulation.
+- NumPy for array operations.
+
+Intended for use as a backend utility within the application's controller to manage image data flow.
+"""
 
 import cv2
 import numpy as np

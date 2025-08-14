@@ -1,3 +1,26 @@
+"""
+path_finder.py
+
+This module provides utility functions for locating the Steam installation directory and the installation path
+of a specific Steam game (by app ID) on Windows systems. It reads Windows registry keys to find the main Steam
+directory, parses Steam's libraryfolders.vdf to enumerate all Steam library locations, and inspects appmanifest
+files to determine the install directory of a given game.
+
+Usage:
+- Used by the GUI (main_window.py) to automatically locate the "Running With Rifles" (RWR) installation and its
+  los.png file, enabling quick access for image editing.
+- Can be reused for any Steam game by specifying a different app_id.
+
+Functions:
+- find_steam_install_path(): Returns the path to the Steam installation directory, or None if not found.
+- find_game_install_path(app_id): Returns the install path for the specified Steam app ID, or None if not found.
+
+Dependencies:
+- winreg (Windows only), os, re
+
+Intended for use as a backend utility to support game file discovery in the application's GUI.
+"""
+
 import winreg
 import os
 

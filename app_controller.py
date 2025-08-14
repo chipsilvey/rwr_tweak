@@ -1,10 +1,25 @@
-# Handle file operations (open, save, backup, reset).
-# Load and apply settings from config_manager.
-# Tell image_processor to perform manipulations.
-# Update the main_window with the new image.
+"""
+app_controller.py
 
-# app_controller.py
-# Handles application logic, state, and communication.
+This module defines the AppController class, which manages the core logic and state of the application.
+It coordinates file operations (open, save, backup, reset), loads and applies settings via the ConfigManager,
+and orchestrates image manipulations through the ImageProcessor. The AppController also handles dynamic
+discovery and management of image editing tools (plugins), and updates the GUI (via MainWindow) in response
+to user actions or changes in application state.
+
+Key responsibilities:
+- Opening, saving, and resetting images, including backup management.
+- Loading and saving tool settings in YAML format.
+- Applying a chain of image processing tools to the loaded image.
+- Managing zoom and display modes for image viewing.
+- Dynamically loading tool plugins from the 'tools' package.
+- Updating the GUI with the current image and settings.
+
+Dependencies:
+- OpenCV (cv2), PIL, tkinter, PyYAML, and custom modules: image_processor, config_manager, tools.
+
+Intended to be used as the central controller in a Tkinter-based image editing application.
+"""
 
 from posixpath import isabs
 import shutil
