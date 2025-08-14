@@ -25,6 +25,8 @@ from config_manager import ConfigManager
 from gui.views.los_tool_view import LineOfSightToolView
 
 from typing import TYPE_CHECKING
+
+import path_finder
 if TYPE_CHECKING:
     from gui.main_window import MainWindow
     # from tools.base_tool import BaseTool
@@ -49,6 +51,23 @@ class AppController:
         self.zoom_level = 1.0
         self.display_mode = 'fit' # 'fit' or 'actual'
         self.available_tools = {}
+
+        self.tweak_root = os.path.dirname(os.path.abspath(__file__))
+        self.backup_root = os.path.join(self.tweak_root, "data", "backup")
+        self.rwr_root = path_finder.find_game_install_path()
+        if not self.rwr_root:
+            messagebox.showerror("Error", "RWR installation path not found.")
+            raise ValueError("RWR installation path not found.")
+        
+    def get_rwr_realitive_path(self, abs_path):
+        """
+        Returns the path realitive to the RWR installation root.
+        """
+        if not self.rwr_root:
+            raise ValueError("RWR installation path not set.")
+        if not abs_path.startswith(self.rwr_root):
+            raise ValueError(f"Path {abs_path} is not under the RWR installation root {self.rwr_root}.")
+        return os.path.relpath(abs_path, self.rwr_root)
 
     def set_view(self, view: "MainWindow"):
         self.view = view
@@ -86,6 +105,34 @@ class AppController:
         if cv_image is None: return None
         rgb_image = cv2.cvtColor(cv_image, cv2.COLOR_BGRA2RGBA)
         return Image.fromarray(rgb_image)
+
+    def file_dialog(self, title, filetypes):
+        """
+        Opens a file dialog to select a file.
+        Args:
+            title: The title of the dialog.
+            filetypes: A list of tuples specifying the file types.
+        Returns:
+            The selected file path or None if cancelled.
+        """
+        return filedialog.askopenfilename(title=title, filetypes=filetypes)
+
+    def backup_file(self, file_path):
+        """ Creates a backup of the specified file.
+        Args:
+            file_path: The path of the file to back up.
+        Returns:
+            The path to the backup file.
+        """
+        if not file_path or not os.path.exists(file_path):
+            raise FileNotFoundError(f"File not found: {file_path}")
+        rwr_realitive_path = self.get_rwr_realitive_path(file_path)
+        backup_path = os.path.join(self.backup_root, rwr_realitive_path)
+
+        if not os.path.exists(backup_path):
+            shutil.copy2(file_path, backup_path)
+            # TODO We should save the backup once, but also keep the RWR version, so that we can check for changes between RWR versions.
+        return backup_path
 
     def open_image_dialog(self):
         file_path = filedialog.askopenfilename(

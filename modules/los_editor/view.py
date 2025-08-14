@@ -4,15 +4,22 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from PIL import Image, ImageTk
+import cv2
 
 from module_view import BaseModuleView
 from module_controller import BaseModuleController
+from modules.los_editor.controller import LOSController
 
 
 class LOSView(BaseModuleView):
 
     def __init__(self, parent, controller: BaseModuleController):
         super().__init__(parent, controller)
+
+        if isinstance(controller, LOSController):
+            self.controller = controller
+        else:
+            raise TypeError("Controller must be an instance of LOSController")
         
         main_pane = ttk.PanedWindow(self, orient=tk.HORIZONTAL)
         main_pane.pack(fill=tk.BOTH, expand=True)

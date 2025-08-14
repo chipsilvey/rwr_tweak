@@ -52,14 +52,17 @@ class LOSController(BaseModuleController):
             for _, class_obj in inspect.getmembers(module, inspect.isclass):
                 if issubclass(class_obj, BaseModuleOperation) and class_obj is not BaseModuleOperation:
                     op_key = name.split('.')[-1].replace("_op", "")
-                    self.operations[op_key] = class_obj()
+                    self.operations[op_key] = class_obj(self)
         
         for op_instance in self.operations.values():
-            op_instance.create_gui(self.view.tools_frame, self)
+            if self.view:
+                op_instance.create_gui(self.view.tools_frame, self)
+            else:
+                messagebox.showerror("Error", f"Operation {op_instance.operation_name} could not be initialized: View is not set.")
     
     def open_image(self):
         """Uses the app_controller's service to open a file."""
-        file_path = self.app_controller.request_file_open(
+        file_path = self.app_controller.file_dialog(
             title="Open PNG Image", filetypes=(("PNG files", "*.png"),)
         )
         if not file_path:
@@ -75,12 +78,15 @@ class LOSController(BaseModuleController):
             
             # Use local processors for data handling
             self.model.original_image_cv = self.image_processor.load(file_path)
-            self.model.config_path = f"{file_path}.yaml"
+            self.model.config_path = f"{self.model.backup_path}.yaml"
             self.model.settings = self.config_manager.load(self.model.config_path)
             
             self._apply_all_operations()
             self.update_view()
-            self.view.load_tool_settings(self.model.settings)
+            if self.view:
+                self.view.load_tool_settings(self.model.settings)
+            else:
+                messagebox.showerror("Error", "View is not initialized. Cannot load tool settings.")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to open and process image: {e}")
             self.model.clear()
@@ -91,7 +97,11 @@ class LOSController(BaseModuleController):
             self.model.processed_image_cv = None
             return
         
-        current_image = self.model.original_image_cv.copy()
+        if self.model.original_image_cv is not None:
+            current_image = self.model.original_image_cv.copy()
+        else:
+            raise ValueError("Original image is None, cannot apply operations.")
+        
         for op_name, op_instance in self.operations.items():
             if op_name in self.model.settings:
                 current_image = op_instance.apply(current_image)

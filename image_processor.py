@@ -5,6 +5,7 @@
 # image_processor.py
 # Contains all OpenCV logic for image manipulation.
 
+from typing import Any
 import cv2
 import numpy as np
 
@@ -18,7 +19,7 @@ class ImageProcessor:
         # processed_image_cv holds the result of the latest manipulation
         self.processed_image_cv = None
 
-    def load(self, path):
+    def load(self, path:str) -> cv2.Mat | np.ndarray[Any, np.dtype[np.integer[Any] | np.floating[Any]]] | None:
         """
         Loads an image from the given path using OpenCV.
         Crucially, it uses IMREAD_UNCHANGED to preserve the alpha (transparency) channel.
