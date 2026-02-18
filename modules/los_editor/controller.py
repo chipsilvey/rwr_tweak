@@ -45,6 +45,9 @@ class LOSController(BaseModuleController):
     
     def _load_operations(self):
         """Dynamically loads all image operations for this module."""
+        if self.view is None:
+            return
+        
         import modules.los_editor.operations as ops
         
         for _, name, _ in pkgutil.iter_modules(ops.__path__, ops.__name__ + "."):
@@ -52,7 +55,7 @@ class LOSController(BaseModuleController):
             for _, class_obj in inspect.getmembers(module, inspect.isclass):
                 if issubclass(class_obj, BaseModuleOperation) and class_obj is not BaseModuleOperation:
                     op_key = name.split('.')[-1].replace("_op", "")
-                    self.operations[op_key] = class_obj()
+                    self.operations[op_key] = class_obj(self)
         
         for op_instance in self.operations.values():
             op_instance.create_gui(self.view.tools_frame, self)
@@ -80,14 +83,15 @@ class LOSController(BaseModuleController):
             
             self._apply_all_operations()
             self.update_view()
-            self.view.load_tool_settings(self.model.settings)
+            if self.view:
+                self.view.load_tool_settings(self.model.settings)
         except Exception as e:
             messagebox.showerror("Error", f"Failed to open and process image: {e}")
             self.model.clear()
             self.update_view()
 
     def _apply_all_operations(self):
-        if not self.model.is_image_loaded():
+        if not self.model.is_image_loaded() or self.model.original_image_cv is None:
             self.model.processed_image_cv = None
             return
         

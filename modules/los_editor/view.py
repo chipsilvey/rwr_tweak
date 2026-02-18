@@ -4,14 +4,17 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from PIL import Image, ImageTk
+import cv2
 
 from module_view import BaseModuleView
 from module_controller import BaseModuleController
+from modules.los_editor.controller import LOSController
 
 
 class LOSView(BaseModuleView):
+    controller: LOSController  # Type override for correct method/attribute access
 
-    def __init__(self, parent, controller: BaseModuleController):
+    def __init__(self, parent, controller: LOSController):
         super().__init__(parent, controller)
         
         main_pane = ttk.PanedWindow(self, orient=tk.HORIZONTAL)

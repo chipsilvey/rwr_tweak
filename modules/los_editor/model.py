@@ -1,6 +1,9 @@
 # RWR_TWEAK/modules/los_editor/model.py
 # The data model for the Line of Sight Editor module.
 
+from typing import Optional
+import numpy as np
+
 from modules.module_model import BaseModuleModel
 
 class LOSModel(BaseModuleModel):
@@ -8,12 +11,12 @@ class LOSModel(BaseModuleModel):
     Holds all the data and state for the Line of Sight Editor.
     """
     def __init__(self):
-        self.image_path = None
-        self.backup_path = None
-        self.config_path = None
+        self.image_path: Optional[str] = None
+        self.backup_path: Optional[str] = None
+        self.config_path: Optional[str] = None
         
-        self.original_image_cv = None
-        self.processed_image_cv = None
+        self.original_image_cv: Optional[np.ndarray] = None
+        self.processed_image_cv: Optional[np.ndarray] = None
         
         self.settings = {}
         

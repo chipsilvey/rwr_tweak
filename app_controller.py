@@ -272,6 +272,52 @@ class AppController:
     def get_current_image_filename(self):
         return os.path.basename(self.image_path) if self.image_path else "untitled.png"
     
+    def request_file_open(self, title="Open File", filetypes=None):
+        """Service method for modules to request file selection via dialog.
+        
+        Args:
+            title: Dialog window title
+            filetypes: Tuple of (description, pattern) tuples, e.g., (("PNG files", "*.png"),)
+        
+        Returns:
+            Selected file path or None if cancelled
+        """
+        if filetypes is None:
+            filetypes = (("All files", "*.*"),)
+        
+        file_path = filedialog.askopenfilename(title=title, filetypes=filetypes)
+        return file_path if file_path else None
+    
+    def backup_file(self, file_path):
+        """Creates an incrementally numbered backup of the specified file.
+        
+        Args:
+            file_path: Path to the file to backup
+        
+        Returns:
+            Path to the created backup file
+        
+        Raises:
+            FileNotFoundError: If source file doesn't exist
+            Exception: If backup creation fails
+        """
+        if not os.path.exists(file_path):
+            raise FileNotFoundError(f"Cannot backup non-existent file: {file_path}")
+        
+        # Find the next available backup number
+        backup_num = 0
+        while True:
+            backup_path = f"{file_path}.{backup_num:02d}.bak"
+            if not os.path.exists(backup_path):
+                break
+            backup_num += 1
+        
+        try:
+            shutil.copy2(file_path, backup_path)
+            return backup_path
+        except Exception as e:
+            raise Exception(f"Could not create backup: {e}")
+    
     def _backup_original(self):
         if self.image_path and os.path.exists(self.image_path):
             self.backup_path = f"{self.image_path}.bak"
