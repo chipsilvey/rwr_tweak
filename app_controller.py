@@ -106,34 +106,6 @@ class AppController:
         rgb_image = cv2.cvtColor(cv_image, cv2.COLOR_BGRA2RGBA)
         return Image.fromarray(rgb_image)
 
-    def file_dialog(self, title, filetypes):
-        """
-        Opens a file dialog to select a file.
-        Args:
-            title: The title of the dialog.
-            filetypes: A list of tuples specifying the file types.
-        Returns:
-            The selected file path or None if cancelled.
-        """
-        return filedialog.askopenfilename(title=title, filetypes=filetypes)
-
-    def backup_file(self, file_path):
-        """ Creates a backup of the specified file.
-        Args:
-            file_path: The path of the file to back up.
-        Returns:
-            The path to the backup file.
-        """
-        if not file_path or not os.path.exists(file_path):
-            raise FileNotFoundError(f"File not found: {file_path}")
-        rwr_realitive_path = self.get_rwr_realitive_path(file_path)
-        backup_path = os.path.join(self.backup_root, rwr_realitive_path)
-
-        if not os.path.exists(backup_path):
-            shutil.copy2(file_path, backup_path)
-            # TODO We should save the backup once, but also keep the RWR version, so that we can check for changes between RWR versions.
-        return backup_path
-
     def open_image_dialog(self):
         file_path = filedialog.askopenfilename(
             title="Open PNG Image", filetypes=(("PNG files", "*.png"), ("All files", "*.*"))
@@ -365,6 +337,26 @@ class AppController:
         except Exception as e:
             raise Exception(f"Could not create backup: {e}")
     
+    # TODO: This backup method usese relative paths and a central backup directory, which is cleaner but less transparent to the user.
+    # The incremental backup method above creates backups in the same directory with numbered extensions, which is more visible but can clutter the directory.
+    # Depending on user preference, one could implement both and let the user choose.
+    # def backup_file(self, file_path):
+    #     """ Creates a backup of the specified file.
+    #     Args:
+    #         file_path: The path of the file to back up.
+    #     Returns:
+    #         The path to the backup file.
+    #     """
+    #     if not file_path or not os.path.exists(file_path):
+    #         raise FileNotFoundError(f"File not found: {file_path}")
+    #     rwr_realitive_path = self.get_rwr_realitive_path(file_path)
+    #     backup_path = os.path.join(self.backup_root, rwr_realitive_path)
+
+    #     if not os.path.exists(backup_path):
+    #         shutil.copy2(file_path, backup_path)
+    #         # TODO We should save the backup once, but also keep the RWR version, so that we can check for changes between RWR versions.
+    #     return backup_path
+
     def _backup_original(self):
         if self.image_path and os.path.exists(self.image_path):
             self.backup_path = f"{self.image_path}.bak"
