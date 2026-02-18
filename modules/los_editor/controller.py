@@ -58,7 +58,10 @@ class LOSController(BaseModuleController):
                     self.operations[op_key] = class_obj(self)
         
         for op_instance in self.operations.values():
-            op_instance.create_gui(self.view.tools_frame, self)
+            if self.view:
+                op_instance.create_gui(self.view.tools_frame, self)
+            else:
+                messagebox.showerror("Error", f"Operation {op_instance.operation_name} could not be initialized: View is not set.")
     
     def open_image(self):
         """Uses the app_controller's service to open a file."""
@@ -78,7 +81,7 @@ class LOSController(BaseModuleController):
             
             # Use local processors for data handling
             self.model.original_image_cv = self.image_processor.load(file_path)
-            self.model.config_path = f"{file_path}.yaml"
+            self.model.config_path = f"{self.model.backup_path}.yaml"
             self.model.settings = self.config_manager.load(self.model.config_path)
             
             self._apply_all_operations()

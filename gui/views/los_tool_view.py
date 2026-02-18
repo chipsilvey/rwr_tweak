@@ -298,10 +298,11 @@ class LineOfSightToolView(AppView):
         """
         Opens a file dialog to select the RWR LOS file.
         """
-        rwr_path = path_finder.find_game_install_path()
-        if not rwr_path:
-            messagebox.showerror("Error", "RWR installation path not found.")
-            return None
+        rwr_path = self.controller.app_controller.rwr_root
+        # rwr_path = path_finder.find_game_install_path()
+        # if not rwr_path:
+        #     messagebox.showerror("Error", "RWR installation path not found.")
+        #     return None
         
         rwr_los_suffix = "media/packages/vanilla/textures/los.png"
         rwr_los_path = os.path.join(rwr_path, rwr_los_suffix)

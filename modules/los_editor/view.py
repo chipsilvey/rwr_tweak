@@ -16,6 +16,11 @@ class LOSView(BaseModuleView):
 
     def __init__(self, parent, controller: LOSController):
         super().__init__(parent, controller)
+
+        if isinstance(controller, LOSController):
+            self.controller = controller
+        else:
+            raise TypeError("Controller must be an instance of LOSController")
         
         main_pane = ttk.PanedWindow(self, orient=tk.HORIZONTAL)
         main_pane.pack(fill=tk.BOTH, expand=True)
